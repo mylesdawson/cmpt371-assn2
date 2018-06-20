@@ -17,7 +17,9 @@ def makepkt(int_val, seq_num, is_ack, is_nack):
     return to_string.encode()
 
 def decode_res(res):
-    return res.decode().split(' ')
+    dec = res.decode().split(' ')
+    dec = [int(x) for x in dec]
+    return dec
 
 def before_messages(seq_num, resent, int_val, is_ack, is_nack):
     sent_or_resent = 'resent' if resent else 'sent'
@@ -26,7 +28,6 @@ def before_messages(seq_num, resent, int_val, is_ack, is_nack):
     print('Packet to send contains: data = {0} seq = {1} ack = {2} nack = {3}'.format(int_val, seq_num, is_ack, is_nack))
 
 def uncorrupted_ack_nack(decoded):
-    # print(decoded)
     ack = decoded[2]
     nack = decoded[3]
 
@@ -36,9 +37,6 @@ def uncorrupted_ack_nack(decoded):
         print('A NACK packet has just been recieved')
     
     print('Packet received contains: data = {0} seq = {1} ack = {2} nack = {3}'.format(decoded[0], decoded[1], ack, nack))
-
-def state_msg(seq_num):
-    pass
 
 
 def main():
@@ -82,7 +80,7 @@ def main():
         uncorrupted_ack_nack(decoded)
 
         # Packet is corrupted or recieved a nack
-        while  rand_corrupted(rand_corrupt) < corruption_prob or bool(decoded[3]):
+        while  (rand_corrupted(rand_corrupt) < corruption_prob or decoded[3]):
             print('The sender is moving back to state WAIT FOR CALL {0} FROM ABOVE'.format(seq_num))
             resent = True
             before_messages(seq_num, resent, int_val, is_ack, is_nack)

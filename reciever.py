@@ -11,7 +11,9 @@ def is_corrupted(input_prob, rand_value):
     return False
 
 def decode_data(data):
-    return data.decode().split(' ')
+    dec = data.decode().split(' ')
+    dec = [int(x) for x in dec]
+    return dec
 
 def ack_nack_msg(corrupted, int_val, seq_num):
     ack = 0 if corrupted else 1
@@ -63,7 +65,6 @@ def main():
     print('The server is ready to receive')
 
     int_val = 0
-    seq_num = 0
     duplicate = 0
     is_ack = 0
     is_nack = 0
@@ -76,11 +77,12 @@ def main():
         vals = decode_data(data)
         corrupted = is_corrupted(corrupted_prob, generate_random())
 
+        # Send nacks
         while corrupted:
             received_corrupted()
             is_nack = 1
             is_ack = 0
-            pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+            pkt = makepkt(int_val, vals[1], is_ack, is_nack)
             connectionId.send(pkt)
 
             data = connectionId.recv(1024)
@@ -90,7 +92,7 @@ def main():
         # Send an ACK packet
         is_nack = 0
         is_ack = 1
-        pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+        pkt = makepkt(int_val, vals[1], is_ack, is_nack)
         connectionId.send(pkt)
 
 
