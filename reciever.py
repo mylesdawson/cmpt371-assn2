@@ -11,11 +11,7 @@ def is_corrupted(input_prob, rand_value):
     return False
 
 def decode_data(data):
-    data = data.decode()
-    # int_val, seq_num, is_ack, is_nack
-    data = data.split(' ')
-    # print(data)
-    return data
+    return data.decode().split(' ')
 
 def ack_nack_msg(corrupted, int_val, seq_num):
     ack = 0 if corrupted else 1
@@ -44,7 +40,9 @@ def makepkt(int_val, seq_num, is_ack, is_nack):
     stringify = [str(x) for x in to_encode]
     to_string = ' '.join(stringify)
 
-    return to_string.encode()
+    encoded = to_string.encode()
+    print(encoded)
+    return encoded
 
 
 def main():
@@ -59,7 +57,6 @@ def main():
 
     serverHost = '127.0.0.1'
     serverPort = 50007
-    # Create a socket that can communicate with ipv4 addresses (AF_INET) using UDP (SOCK_DGRAM)
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((serverHost, serverPort))
     serverSocket.listen(1)
@@ -67,12 +64,13 @@ def main():
 
     int_val = 0
     seq_num = 0
-    duplicate = False
-    is_ack = False
-    is_nack = False
+    duplicate = 0
+    is_ack = 0
+    is_nack = 0
     
+    connectionId, addr = serverSocket.accept()
+
     while True:
-        connectionId, addr = serverSocket.accept()
         data = connectionId.recv(1024)
 
         vals = decode_data(data)
@@ -80,12 +78,23 @@ def main():
 
         while corrupted:
             received_corrupted()
-            is_nack = True
-            connectionId.send(makepkt(int_val, seq_num, is_ack, is_nack))
+            is_nack = 1
+            is_ack = 0
+            pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+            connectionId.send(pkt)
 
-        is_nack = False
+            data = connectionId.recv(1024)
+            vals = decode_data(data)
+            corrupted = is_corrupted(corrupted_prob, generate_random())
 
-    serverSocket.close()
+        # Send an ACK packet
+        is_nack = 0
+        is_ack = 1
+        pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+        connectionId.send(pkt)
+
+
+    connectionId.close()
 
 if __name__ == '__main__':
     main()
