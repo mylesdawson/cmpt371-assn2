@@ -19,14 +19,13 @@ def makepkt(int_val, seq_num, is_ack, is_nack):
 def decode_res(res):
     return res.decode().split(' ')
 
-
 def before_messages(seq_num, resent, int_val, is_ack, is_nack):
-    sent_or_resent = resent ? 'resent' : 'sent'
-    ack = is_ack ? 1 : 0
-    nack = is_nack ? 1 : 0
+    sent_or_resent = 'resent' if resent else 'sent'
+    ack =  1 if is_ack else 0
+    nack = 1 if is_nack else 0
 
     print('A packet with sequence number {0} is about to be {1}'.format(seq_num, sent_or_resent))
-    print('Packet to send contains: data = {0} seq = {1} ack = {2} nakc = {3}'.format(int_val, seq_num, ack, nack))
+    print('Packet to send contains: data = {0} seq = {1} ack = {2} nack = {3}'.format(int_val, seq_num, ack, nack))
 
 def uncorrupted_ack_nack(decode_res):
     ack = decode_res[2]
@@ -45,10 +44,10 @@ def state_msg(seq_num):
 
 def main():
     try:
-        arrival_time_seed = sys.argv[1]
-        num_packets = sys.argv[2]
-        corrupted_seed = sys.argv[3]
-        corruption_prob = sys.argv[4]
+        arrival_time_seed = float(sys.argv[1])
+        num_packets = float(sys.argv[2])
+        corrupted_seed = float(sys.argv[3])
+        corruption_prob = float(sys.argv[4])
     except(IndexError) as e:
         print(type(e).__name__, e.args, '\nPlease provide 4 arguments')
         exit
@@ -90,7 +89,7 @@ def main():
 
         resent = False
         int_val += 1
-        seq_num = seq_num == 1 ? 0 : 1
+        seq_num = 0 if seq_num == 1 else 1
     
     client_socket.close()
         
