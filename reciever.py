@@ -12,6 +12,7 @@ def is_corrupted(input_prob, rand_value):
 
 def decode_data(data):
     dec = data.decode().split(' ')
+    # print(dec)
     dec = [int(x) for x in dec]
     return dec
 
@@ -37,13 +38,21 @@ def received_msg(vals, duplicate):
 def received_corrupted():
     print('A corrupted packet has just been received')
 
+def sender_state_msg(corrupted, seq_num):
+    seq_num = 0 if seq_num else 1
+
+    if corrupted:
+        print('The receiver is moving back to state WAIT FOR {0} FROM BELOW'.format(seq_num))
+    else:
+        print('The receiver is moving to state WAIT FOR {0} FROM BELOW'.format(seq_num))
+
 def makepkt(int_val, seq_num, is_ack, is_nack):
     to_encode = [int_val, seq_num, is_ack, is_nack]
     stringify = [str(x) for x in to_encode]
     to_string = ' '.join(stringify)
 
     encoded = to_string.encode()
-    print(encoded)
+    # print(encoded)
     return encoded
 
 
@@ -75,6 +84,7 @@ def main():
         data = connectionId.recv(1024)
 
         vals = decode_data(data)
+        seq_num = vals[1]
         corrupted = is_corrupted(corrupted_prob, generate_random())
 
         # Send nacks
@@ -82,8 +92,10 @@ def main():
             received_corrupted()
             is_nack = 1
             is_ack = 0
-            pkt = makepkt(int_val, vals[1], is_ack, is_nack)
+            pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+            ack_nack_msg(corrupted, int_val, seq_num)
             connectionId.send(pkt)
+            sender_state_msg(corrupted, seq_num)
 
             data = connectionId.recv(1024)
             vals = decode_data(data)
@@ -92,8 +104,11 @@ def main():
         # Send an ACK packet
         is_nack = 0
         is_ack = 1
-        pkt = makepkt(int_val, vals[1], is_ack, is_nack)
+        pkt = makepkt(int_val, seq_num, is_ack, is_nack)
+        # print(data)
+        ack_nack_msg(corrupted, int_val, seq_num)
         connectionId.send(pkt)
+        sender_state_msg(corrupted, seq_num)
 
 
     connectionId.close()

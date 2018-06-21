@@ -2,6 +2,7 @@ from socket import *
 import random
 import sys
 import time
+import math
 
 def rand_arrival_time(rand):
     return rand.uniform(0.0, 4.9)
@@ -69,10 +70,15 @@ def main():
     client_socket.connect((server_name, server_port))
 
     for i in range(int(num_packets)):
+        curr_time = time.time()
+
+
         packet = makepkt(int_val, seq_num, is_ack, is_nack)
         before_messages(seq_num, resent, int_val, is_ack, is_nack)
         client_socket.send(packet)
-        time.sleep(rand_arrival_time(rand_arrival))
+
+        expected_time = math.ceil(rand_arrival_time(rand_arrival)) + curr_time
+        # print(curr_time, expected_time)
 
         print('The sender is moving to state WAIT FOR ACK OR NACK')
         returned_message, server_address = client_socket.recvfrom(2048)
@@ -82,7 +88,7 @@ def main():
         # Packet is corrupted or recieved a nack
         while  (rand_corrupted(rand_corrupt) < corruption_prob or decoded[3]):
             print('The sender is moving back to state WAIT FOR CALL {0} FROM ABOVE'.format(seq_num))
-            resent = True
+            resent = 1
             before_messages(seq_num, resent, int_val, is_ack, is_nack)
             client_socket.send(packet)
             time.sleep(rand_arrival_time(rand_arrival))
@@ -92,12 +98,16 @@ def main():
             decoded = decode_res(returned_message)
             uncorrupted_ack_nack(decoded)
 
-
-        resent = False
+        resent = 0
         int_val += 1
         seq_num = 0 if seq_num else 1
         print('The sender is moving to state WAIT FOR CALL {0} FROM ABOVE'.format(seq_num))
-    
+
+        wait_time = time.time()
+        if wait_time < expected_time:
+            # print('waiting for {0} seconds'.format(expected_time - wait_time))
+            time.sleep(expected_time - wait_time)
+
     client_socket.close()
         
 
